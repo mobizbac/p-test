@@ -3,433 +3,617 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>New Tab</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<title>mobweb</title>
 <script src="/uv/uv.bundle.js"></script>
 <script src="/uv/uv.config.js"></script>
 <script src="/baremux/index.js"></script>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --v:#8b5cf6;--vl:#a78bfa;--vd:#6d28d9;--vg:rgba(139,92,246,0.12);
-  --chrome:#111118;--chrome2:#16161f;--tabbar:#0c0c14;
-  --border:rgba(139,92,246,0.18);--border2:rgba(255,255,255,0.06);
-  --text:#e2e8f0;--muted:#64748b;--urlbg:#0d0d18;
-}
-html,body{height:100%;width:100%;overflow:hidden;background:var(--chrome);font-family:'Inter',sans-serif;color:var(--text)}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* BROWSER SHELL */
-#browser{display:flex;flex-direction:column;height:100vh;width:100vw}
-
-/* TAB BAR */
-#tab-bar{
-  height:36px;background:var(--tabbar);
-  display:flex;align-items:flex-end;padding:0 0 0 6px;gap:1px;
-  flex-shrink:0;border-bottom:1px solid var(--border);
-  overflow-x:auto;overflow-y:hidden;
-}
-#tab-bar::-webkit-scrollbar{height:0}
-
-.tab{
-  height:28px;min-width:60px;max-width:200px;flex:0 0 auto;
-  display:flex;align-items:center;padding:0 8px 0 10px;gap:6px;
-  background:transparent;border:1px solid transparent;
-  border-bottom:none;border-radius:7px 7px 0 0;
-  cursor:pointer;overflow:hidden;font-size:11.5px;color:var(--muted);
-  transition:background .12s,color .12s;user-select:none;flex-shrink:0;
-  white-space:nowrap;
-}
-.tab.active{background:var(--chrome);color:var(--text);border-color:var(--border);z-index:2;position:relative}
-.tab:not(.active):hover{background:rgba(139,92,246,0.07);color:rgba(255,255,255,0.6)}
-.tab-fav{width:13px;height:13px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px}
-.tab-title{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px;font-weight:400}
-.tab-x{width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;opacity:0;transition:opacity .12s,background .12s;color:var(--muted);line-height:1}
-.tab:hover .tab-x,.tab.active .tab-x{opacity:1}
-.tab-x:hover{background:rgba(255,255,255,0.1);color:white}
-
-#newtab-btn{
-  height:28px;width:28px;margin-left:2px;margin-bottom:0;align-self:flex-end;
-  background:transparent;border:none;color:var(--muted);font-size:20px;
-  cursor:pointer;display:flex;align-items:center;justify-content:center;
-  border-radius:6px 6px 0 0;transition:color .15s,background .15s;flex-shrink:0;
-}
-#newtab-btn:hover{color:var(--vl);background:rgba(139,92,246,0.08)}
-
-/* TOOLBAR */
-#toolbar{
-  height:44px;background:var(--chrome);border-bottom:1px solid var(--border);
-  display:flex;align-items:center;padding:0 8px;gap:4px;flex-shrink:0;
-}
-.nb{
-  width:30px;height:30px;background:transparent;border:none;border-radius:7px;
-  color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;
-  transition:color .15s,background .15s;flex-shrink:0;
-}
-.nb:hover:not(:disabled){color:var(--vl);background:var(--vg)}
-.nb:disabled{opacity:0.2;cursor:default}
-.nb svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-
-/* URL BAR */
-#url-wrap{flex:1;position:relative}
-#url-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;display:flex;align-items:center}
-#url-icon svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
-#url-input{
-  width:100%;height:32px;background:var(--urlbg);border:1.5px solid var(--border2);
-  border-radius:16px;padding:0 14px 0 32px;color:var(--text);
-  font-family:'Inter',sans-serif;font-size:12.5px;outline:none;
-  transition:border-color .2s,background .2s;
-}
-#url-input:focus{border-color:var(--v);background:#090914}
-#url-input::placeholder{color:var(--muted)}
-
-/* ENGINE CORNER */
-#engine-corner{position:relative;flex-shrink:0}
-#engine-btn{
-  width:32px;height:32px;background:var(--vg);border:1.5px solid var(--border);
-  border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;
-  transition:border-color .2s,background .2s;position:relative;
-}
-#engine-btn:hover{border-color:var(--v);background:rgba(139,92,246,0.22)}
-#engine-btn img{width:16px;height:16px;border-radius:3px}
-
-#engine-drop{
-  position:absolute;top:calc(100% + 5px);right:0;width:172px;
-  background:#111118;border:1px solid var(--border);border-radius:11px;
-  padding:5px;display:none;z-index:99999;
-  box-shadow:0 20px 50px rgba(0,0,0,0.7);
-  animation:dd .16s cubic-bezier(.2,.8,.2,1);
-}
-@keyframes dd{from{opacity:0;transform:translateY(-5px) scale(.97)}to{opacity:1;transform:none}}
-#engine-drop.open{display:block}
-.eopt{
-  display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:7px;
-  cursor:pointer;font-size:12.5px;color:var(--text);transition:background .12s;font-weight:400;
-}
-.eopt:hover{background:var(--vg)}
-.eopt.active{background:rgba(139,92,246,0.18);color:var(--vl)}
-.eopt img{width:15px;height:15px;border-radius:3px}
-.elabel{font-size:10px;color:var(--muted);margin-left:auto;font-weight:300}
-
-/* CONTENT */
-#content{flex:1;position:relative;overflow:hidden;background:#0a0a12}
-.pf{position:absolute;inset:0;border:none;display:none;width:100%;height:100%}
-.pf.active{display:block}
-
-/* NEW TAB PAGE */
-#newtab{
-  position:absolute;inset:0;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;background:#08080f;z-index:10;
-}
-#newtab.gone{display:none}
-
-.nt-glow{
-  position:absolute;top:0;left:50%;transform:translateX(-50%);
-  width:600px;height:300px;
-  background:radial-gradient(ellipse at 50% 0%,rgba(139,92,246,0.14) 0%,transparent 70%);
-  pointer-events:none;
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #1a1a1a;
+  color: #ccc;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
-.nt-logo{
-  font-size:48px;font-weight:300;letter-spacing:-1.5px;color:white;
-  margin-bottom:28px;position:relative;
+/* tab bar */
+#tabs {
+  display: flex;
+  align-items: flex-end;
+  background: #111;
+  padding: 4px 4px 0 4px;
+  gap: 2px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  min-height: 34px;
+  flex-shrink: 0;
 }
-.nt-logo b{color:var(--v);font-weight:700}
+#tabs::-webkit-scrollbar { display: none; }
 
-.nt-sw{width:500px;max-width:90vw;position:relative;margin-bottom:36px}
-.nt-si{
-  width:100%;height:46px;background:rgba(255,255,255,0.03);
-  border:1.5px solid var(--border);border-radius:23px;
-  padding:0 50px 0 20px;color:white;font-family:'Inter',sans-serif;
-  font-size:14px;outline:none;transition:border-color .2s,background .2s;
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px 5px 10px;
+  background: #2a2a2a;
+  border: 1px solid #333;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  cursor: pointer;
+  font-size: 12px;
+  color: #888;
+  max-width: 180px;
+  min-width: 70px;
+  white-space: nowrap;
+  overflow: hidden;
+  flex-shrink: 0;
+  user-select: none;
 }
-.nt-si:focus{border-color:var(--v);background:rgba(139,92,246,0.05)}
-.nt-si::placeholder{color:rgba(255,255,255,0.18)}
-.nt-go{
-  position:absolute;right:7px;top:50%;transform:translateY(-50%);
-  width:34px;height:34px;background:var(--v);border:none;border-radius:50%;
-  cursor:pointer;display:flex;align-items:center;justify-content:center;
-  transition:background .2s;
+.tab.active {
+  background: #1a1a1a;
+  color: #ddd;
+  border-color: #444;
 }
-.nt-go:hover{background:var(--vd)}
-.nt-go svg{width:15px;height:15px;fill:none;stroke:white;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.tab:hover:not(.active) { background: #333; color: #aaa; }
 
-.nt-sc{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;max-width:560px}
-.sc{
-  display:flex;flex-direction:column;align-items:center;gap:7px;
-  cursor:pointer;transition:transform .2s;
-}
-.sc:hover{transform:translateY(-3px)}
-.sc-i{
-  width:50px;height:50px;background:rgba(255,255,255,0.03);border:1px solid var(--border2);
-  border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:20px;
-  transition:border-color .2s,background .2s;
-}
-.sc:hover .sc-i{border-color:var(--v);background:var(--vg)}
-.sc-l{font-size:10.5px;color:var(--muted);font-weight:400}
+.tab-title { overflow: hidden; text-overflow: ellipsis; flex: 1; }
 
-/* LOADING */
-#load{
-  position:absolute;inset:0;background:#08080f;
-  display:none;flex-direction:column;align-items:center;justify-content:center;
-  z-index:9999;
+.tab-fav { width: 13px; height: 13px; flex-shrink: 0; font-size: 10px; display: flex; align-items: center; }
+.tab-fav img { width: 13px; height: 13px; }
+
+.close-tab {
+  font-size: 14px;
+  color: #555;
+  line-height: 1;
+  padding: 0 1px;
+  flex-shrink: 0;
+  opacity: 0;
 }
-#load.show{display:flex}
-#load img{width:200px;height:200px;object-fit:contain;border-radius:14px}
+.tab:hover .close-tab, .tab.active .close-tab { opacity: 1; }
+.close-tab:hover { color: #ccc; }
+
+#new-tab {
+  padding: 4px 8px 4px;
+  background: transparent;
+  border: none;
+  color: #555;
+  font-size: 18px;
+  cursor: pointer;
+  align-self: flex-end;
+  line-height: 1;
+  border-radius: 4px 4px 0 0;
+  margin-bottom: 0;
+}
+#new-tab:hover { color: #999; background: #2a2a2a; }
+
+/* toolbar */
+#toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px;
+  background: #222;
+  border-bottom: 1px solid #333;
+  flex-shrink: 0;
+}
+
+.navbtn {
+  background: none;
+  border: 1px solid #383838;
+  color: #777;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.navbtn:hover:not(:disabled) { background: #2e2e2e; color: #bbb; border-color: #555; }
+.navbtn:disabled { opacity: 0.25; cursor: default; }
+.navbtn svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+#url-bar {
+  flex: 1;
+  position: relative;
+}
+
+#url-input {
+  width: 100%;
+  height: 28px;
+  background: #111;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  padding: 0 10px;
+  color: #ccc;
+  font-size: 12.5px;
+  font-family: inherit;
+  outline: none;
+}
+#url-input:focus { border-color: #555; background: #0e0e0e; }
+#url-input::placeholder { color: #444; }
+
+/* engine picker */
+#eng-wrap { position: relative; flex-shrink: 0; }
+#eng-btn {
+  width: 28px; height: 28px;
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+#eng-btn:hover { background: #333; border-color: #555; }
+#eng-btn img { width: 14px; height: 14px; border-radius: 2px; }
+
+#eng-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: #1e1e1e;
+  border: 1px solid #3a3a3a;
+  border-radius: 5px;
+  padding: 4px;
+  width: 160px;
+  z-index: 9999;
+}
+#eng-menu.open { display: block; }
+
+.eng-opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12.5px;
+  color: #ccc;
+}
+.eng-opt:hover { background: #2a2a2a; }
+.eng-opt.active { background: #2a2a2a; color: #fff; }
+.eng-opt img { width: 14px; height: 14px; border-radius: 2px; }
+.eng-key { margin-left: auto; font-size: 10px; color: #555; font-family: monospace; }
+
+/* content */
+#content {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #111;
+}
+
+.frame {
+  position: absolute;
+  inset: 0;
+  border: none;
+  width: 100%;
+  height: 100%;
+  display: none;
+}
+.frame.active { display: block; }
+
+/* new tab page */
+#home {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #111;
+  gap: 20px;
+}
+#home.hidden { display: none; }
+
+#home h1 {
+  font-size: 32px;
+  font-weight: 300;
+  color: #ddd;
+  letter-spacing: -0.5px;
+}
+#home h1 b { font-weight: 700; color: #888; }
+
+#home-search {
+  display: flex;
+  width: 440px;
+  max-width: 90vw;
+  gap: 0;
+}
+#home-input {
+  flex: 1;
+  height: 36px;
+  background: #1a1a1a;
+  border: 1px solid #3a3a3a;
+  border-right: none;
+  border-radius: 4px 0 0 4px;
+  padding: 0 12px;
+  color: #ccc;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+#home-input:focus { border-color: #555; }
+#home-input::placeholder { color: #444; }
+
+#home-go {
+  height: 36px;
+  padding: 0 14px;
+  background: #2d2d2d;
+  border: 1px solid #3a3a3a;
+  border-radius: 0 4px 4px 0;
+  color: #aaa;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+}
+#home-go:hover { background: #383838; color: #ddd; }
+
+#shortcuts {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 500px;
+  padding: 0 12px;
+}
+
+.shortcut {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  padding: 8px 10px;
+  border-radius: 5px;
+  transition: background 0.1s;
+}
+.shortcut:hover { background: #1e1e1e; }
+
+.shortcut-icon {
+  width: 36px;
+  height: 36px;
+  background: #1e1e1e;
+  border: 1px solid #2e2e2e;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.shortcut-icon img { width: 20px; height: 20px; }
+.shortcut-label { font-size: 11px; color: #666; }
+
+/* loading */
+#loading {
+  position: absolute;
+  inset: 0;
+  background: #111;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  z-index: 999;
+}
+#loading.show { display: flex; }
+#loading p { font-size: 12px; color: #555; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #2a2a2a;
+  border-top-color: #666;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
-<div id="browser">
 
-  <div id="tab-bar">
-    <button id="newtab-btn" title="New tab">+</button>
+<div id="tabs">
+  <button id="new-tab">+</button>
+</div>
+
+<div id="toolbar">
+  <button class="navbtn" id="btn-back" onclick="nav('back')" disabled>
+    <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+  </button>
+  <button class="navbtn" id="btn-fwd" onclick="nav('fwd')" disabled>
+    <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+  </button>
+  <button class="navbtn" id="btn-reload" onclick="nav('reload')">
+    <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+  </button>
+
+  <div id="url-bar">
+    <input id="url-input" type="text" placeholder="Search or type a URL" autocomplete="off" spellcheck="false">
   </div>
 
-  <div id="toolbar">
-    <button class="nb" id="bb" onclick="nav('back')" disabled>
-      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+  <div id="eng-wrap">
+    <button id="eng-btn">
+      <img id="eng-icon" src="https://www.google.com/favicon.ico" alt="">
     </button>
-    <button class="nb" id="fb" onclick="nav('forward')" disabled>
-      <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-    </button>
-    <button class="nb" id="rb" onclick="nav('reload')">
-      <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-    </button>
-
-    <div id="url-wrap">
-      <span id="url-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
-      <input id="url-input" type="text" placeholder="Search or enter address" autocomplete="off" spellcheck="false">
-    </div>
-
-    <div id="engine-corner">
-      <button id="engine-btn">
-        <img id="eng-ico" src="https://www.google.com/favicon.ico" alt="">
-      </button>
-      <div id="engine-drop">
-        <div class="eopt active" data-url="https://www.google.com/search?q=%s" data-ico="https://www.google.com/favicon.ico" onclick="setEng(this)">
-          <img src="https://www.google.com/favicon.ico" alt="">Google<span class="elabel">g</span>
-        </div>
-        <div class="eopt" data-url="https://duckduckgo.com/?q=%s" data-ico="https://duckduckgo.com/favicon.ico" onclick="setEng(this)">
-          <img src="https://duckduckgo.com/favicon.ico" alt="">DuckDuckGo<span class="elabel">ddg</span>
-        </div>
-        <div class="eopt" data-url="https://www.bing.com/search?q=%s" data-ico="https://www.bing.com/favicon.ico" onclick="setEng(this)">
-          <img src="https://www.bing.com/favicon.ico" alt="">Bing<span class="elabel">b</span>
-        </div>
-        <div class="eopt" data-url="https://search.brave.com/search?q=%s" data-ico="https://brave.com/favicon.ico" onclick="setEng(this)">
-          <img src="https://brave.com/favicon.ico" alt="">Brave<span class="elabel">br</span>
-        </div>
-        <div class="eopt" data-url="https://search.yahoo.com/search?p=%s" data-ico="https://www.yahoo.com/favicon.ico" onclick="setEng(this)">
-          <img src="https://www.yahoo.com/favicon.ico" alt="">Yahoo<span class="elabel">y</span>
-        </div>
+    <div id="eng-menu">
+      <div class="eng-opt active" data-url="https://www.google.com/search?q=%s" data-ico="https://www.google.com/favicon.ico" onclick="pickEngine(this)">
+        <img src="https://www.google.com/favicon.ico">Google<span class="eng-key">g</span>
       </div>
-    </div>
-  </div>
-
-  <div id="content">
-    <div id="newtab">
-      <div class="nt-glow"></div>
-      <div class="nt-logo">mob<b>web</b></div>
-      <div class="nt-sw">
-        <input class="nt-si" id="nt-si" type="text" placeholder="Search the web or enter a URL..." autocomplete="off" spellcheck="false">
-        <button class="nt-go" onclick="doSearch()">
-          <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-        </button>
+      <div class="eng-opt" data-url="https://duckduckgo.com/?q=%s" data-ico="https://duckduckgo.com/favicon.ico" onclick="pickEngine(this)">
+        <img src="https://duckduckgo.com/favicon.ico">DuckDuckGo<span class="eng-key">ddg</span>
       </div>
-      <div class="nt-sc">
-        <div class="sc" onclick="go('https://youtube.com')"><div class="sc-i">▶</div><div class="sc-l">YouTube</div></div>
-        <div class="sc" onclick="go('https://discord.com')"><div class="sc-i">💬</div><div class="sc-l">Discord</div></div>
-        <div class="sc" onclick="go('https://reddit.com')"><div class="sc-i">🤖</div><div class="sc-l">Reddit</div></div>
-        <div class="sc" onclick="go('https://spotify.com')"><div class="sc-i">🎵</div><div class="sc-l">Spotify</div></div>
-        <div class="sc" onclick="go('https://twitch.tv')"><div class="sc-i">📺</div><div class="sc-l">Twitch</div></div>
-        <div class="sc" onclick="go('https://chat.openai.com')"><div class="sc-i">🤖</div><div class="sc-l">ChatGPT</div></div>
-        <div class="sc" onclick="go('https://github.com')"><div class="sc-i">⌨️</div><div class="sc-l">GitHub</div></div>
-        <div class="sc" onclick="go('https://twitter.com')"><div class="sc-i">✖</div><div class="sc-l">X</div></div>
+      <div class="eng-opt" data-url="https://www.bing.com/search?q=%s" data-ico="https://www.bing.com/favicon.ico" onclick="pickEngine(this)">
+        <img src="https://www.bing.com/favicon.ico">Bing<span class="eng-key">b</span>
       </div>
-    </div>
-
-    <div id="load">
-      <img src="https://c.tenor.com/PDVHdZ0XYJoAAAAd/tenor.gif" alt="loading">
+      <div class="eng-opt" data-url="https://search.brave.com/search?q=%s" data-ico="https://brave.com/favicon.ico" onclick="pickEngine(this)">
+        <img src="https://brave.com/favicon.ico">Brave<span class="eng-key">br</span>
+      </div>
+      <div class="eng-opt" data-url="https://search.yahoo.com/search?p=%s" data-ico="https://www.yahoo.com/favicon.ico" onclick="pickEngine(this)">
+        <img src="https://www.yahoo.com/favicon.ico">Yahoo<span class="eng-key">y</span>
+      </div>
     </div>
   </div>
 </div>
 
-<script>
-let tabs=[],active=null,engUrl='https://www.google.com/search?q=%s',proxyReady=false,conn=null;
+<div id="content">
+  <div id="home">
+    <h1>mob<b>web</b></h1>
+    <div id="home-search">
+      <input id="home-input" type="text" placeholder="Search the web or enter URL..." autocomplete="off" spellcheck="false">
+      <button id="home-go" onclick="doSearch()">Go</button>
+    </div>
+    <div id="shortcuts"></div>
+  </div>
+  <div id="loading">
+    <div class="spinner"></div>
+    <p id="load-url"></p>
+  </div>
+</div>
 
-// proxy init
-(async()=>{
-  try{
-    conn=new BareMux.BareMuxConnection("/baremux/worker.js");
-    for(let i=3;i>0;i--){
-      try{await conn.setTransport("/libcurl/index.mjs",[{websocket:"wss://wisp.rhw.one/"}]);break;}
-      catch(e){if(i===1)throw e;await new Promise(r=>setTimeout(r,500));}
+<script>
+const SITES = [
+  { label: 'YouTube',  url: 'https://youtube.com',        ico: 'https://www.youtube.com/favicon.ico' },
+  { label: 'Discord',  url: 'https://discord.com',        ico: 'https://discord.com/assets/favicon.ico' },
+  { label: 'Reddit',   url: 'https://reddit.com',         ico: 'https://www.reddit.com/favicon.ico' },
+  { label: 'Spotify',  url: 'https://open.spotify.com',   ico: 'https://open.spotify.com/favicon.ico' },
+  { label: 'Twitch',   url: 'https://twitch.tv',          ico: 'https://static.twitchsvc.net/favicon.ico' },
+  { label: 'ChatGPT',  url: 'https://chat.openai.com',    ico: 'https://chat.openai.com/favicon.ico' },
+  { label: 'GitHub',   url: 'https://github.com',         ico: 'https://github.com/favicon.ico' },
+  { label: 'X',        url: 'https://twitter.com',        ico: 'https://abs.twimg.com/favicons/twitter.3.ico' },
+];
+
+const sc = document.getElementById('shortcuts');
+SITES.forEach(s => {
+  const el = document.createElement('div');
+  el.className = 'shortcut';
+  el.onclick = () => navigate(s.url);
+  el.innerHTML = `<div class="shortcut-icon"><img src="${s.ico}" onerror="this.style.display='none'"></div><div class="shortcut-label">${s.label}</div>`;
+  sc.appendChild(el);
+});
+
+let tabs = [], activeId = null;
+let engUrl = 'https://www.google.com/search?q=%s';
+let proxyReady = false;
+
+(async () => {
+  try {
+    const conn = new BareMux.BareMuxConnection('/baremux/worker.js');
+    for (let i = 3; i > 0; i--) {
+      try { await conn.setTransport('/libcurl/index.mjs', [{ websocket: 'wss://wisp.rhw.one/' }]); break; }
+      catch (e) { if (i === 1) throw e; await new Promise(r => setTimeout(r, 500)); }
     }
-    await navigator.serviceWorker.register("/uv/sw.js");
-    proxyReady=true;
-  }catch(e){console.error('proxy fail',e);}
+    await navigator.serviceWorker.register('/uv/sw.js');
+    proxyReady = true;
+  } catch (e) { console.warn('proxy failed', e); }
 })();
 
-function resolveUrl(s){
-  s=s.trim();if(!s)return null;
-  try{return new URL(s).href;}catch(e){}
-  try{const u=new URL('https://'+s);if(u.hostname.includes('.')&&!u.hostname.includes(' '))return u.href;}catch(e){}
-  return engUrl.replace('%s',encodeURIComponent(s));
+function resolveUrl(s) {
+  s = s.trim();
+  if (!s) return null;
+  try { return new URL(s).href; } catch (e) {}
+  try { const u = new URL('https://' + s); if (u.hostname.includes('.') && !u.hostname.includes(' ')) return u.href; } catch (e) {}
+  return engUrl.replace('%s', encodeURIComponent(s));
 }
 
-// engine
-document.getElementById('engine-btn').addEventListener('click',e=>{
-  e.stopPropagation();
-  document.getElementById('engine-drop').classList.toggle('open');
-});
-document.addEventListener('click',()=>document.getElementById('engine-drop').classList.remove('open'));
-
-function setEng(el){
-  document.querySelectorAll('.eopt').forEach(o=>o.classList.remove('active'));
-  el.classList.add('active');
-  engUrl=el.dataset.url;
-  document.getElementById('eng-ico').src=el.dataset.ico;
-  document.getElementById('engine-drop').classList.remove('open');
-}
-
-// tabs
-function mkTab(url){
-  const id='t'+Date.now();
-  const t={id,url:null,title:'New Tab',frame:null,fav:null};
-  tabs.push(t);active=id;
+function newTab(url) {
+  const id = 'tab_' + Date.now();
+  tabs.push({ id, url: null, title: 'New Tab', frame: null, fav: null });
+  activeId = id;
   renderTabs();
-  if(url)loadUrl(url,id);
-  else{showNT();setUrl('');}
-  return id;
+  if (url) navigate(url, id);
+  else { showHome(); setUrlBar(''); }
 }
 
-function killTab(id,e){
-  if(e)e.stopPropagation();
-  const i=tabs.findIndex(t=>t.id===id);
-  const t=tabs[i];
-  if(t&&t.frame)t.frame.remove();
-  tabs.splice(i,1);
-  if(!tabs.length){mkTab(null);}
-  else{swTab(tabs[Math.min(i,tabs.length-1)].id);}
-  renderTabs();
+function closeTab(id, e) {
+  if (e) e.stopPropagation();
+  const idx = tabs.findIndex(t => t.id === id);
+  const t = tabs[idx];
+  if (t && t.frame) t.frame.remove();
+  tabs.splice(idx, 1);
+  if (!tabs.length) { newTab(null); return; }
+  switchTab(tabs[Math.min(idx, tabs.length - 1)].id);
 }
 
-function swTab(id){
-  active=id;
-  const t=tabs.find(t=>t.id===id);
-  if(!t)return;
-  document.querySelectorAll('.pf').forEach(f=>f.classList.remove('active'));
-  hideLoad();
-  if(t.frame){
-    document.getElementById('newtab').classList.add('gone');
+function switchTab(id) {
+  activeId = id;
+  const t = tabs.find(t => t.id === id);
+  if (!t) return;
+  document.querySelectorAll('.frame').forEach(f => f.classList.remove('active'));
+  hideLoading();
+  if (t.frame) {
+    document.getElementById('home').classList.add('hidden');
     t.frame.classList.add('active');
-    setUrl(t.url||'');
-  }else{showNT();setUrl('');}
-  renderTabs();updateNav();
+    setUrlBar(t.url || '');
+  } else {
+    showHome();
+    setUrlBar('');
+  }
+  renderTabs();
+  updateNavBtns();
 }
 
-function renderTabs(){
-  const bar=document.getElementById('tab-bar');
-  const btn=document.getElementById('newtab-btn');
-  bar.querySelectorAll('.tab').forEach(el=>el.remove());
-  tabs.forEach(t=>{
-    const el=document.createElement('div');
-    el.className='tab'+(t.id===active?' active':'');
-    const fav=document.createElement('div');fav.className='tab-fav';
-    if(t.fav){const img=document.createElement('img');img.src=t.fav;img.style.cssText='width:13px;height:13px;border-radius:2px';img.onerror=()=>{img.remove();fav.textContent='🌐'};fav.appendChild(img);}
-    else{fav.textContent=t.frame?'🌐':'✦';fav.style.fontSize='11px';}
-    const ti=document.createElement('div');ti.className='tab-title';ti.textContent=t.title;
-    const x=document.createElement('div');x.className='tab-x';x.textContent='×';
-    x.onclick=ev=>killTab(t.id,ev);
-    el.appendChild(fav);el.appendChild(ti);el.appendChild(x);
-    el.addEventListener('click',()=>swTab(t.id));
-    bar.insertBefore(el,btn);
+function renderTabs() {
+  const bar = document.getElementById('tabs');
+  const addBtn = document.getElementById('new-tab');
+  bar.querySelectorAll('.tab').forEach(el => el.remove());
+
+  tabs.forEach(t => {
+    const el = document.createElement('div');
+    el.className = 'tab' + (t.id === activeId ? ' active' : '');
+
+    const fav = document.createElement('div');
+    fav.className = 'tab-fav';
+    if (t.fav) {
+      const img = document.createElement('img');
+      img.src = t.fav;
+      img.onerror = () => { img.remove(); fav.textContent = '•'; };
+      fav.appendChild(img);
+    } else {
+      fav.textContent = t.frame ? '•' : '○';
+    }
+
+    const title = document.createElement('span');
+    title.className = 'tab-title';
+    title.textContent = t.title;
+
+    const x = document.createElement('span');
+    x.className = 'close-tab';
+    x.textContent = '×';
+    x.onclick = ev => closeTab(t.id, ev);
+
+    el.appendChild(fav);
+    el.appendChild(title);
+    el.appendChild(x);
+    el.addEventListener('click', () => switchTab(t.id));
+    bar.insertBefore(el, addBtn);
   });
 }
 
-// load
-function loadUrl(raw,tabId){
-  if(!raw)return;
-  tabId=tabId||active;
-  const t=tabs.find(t=>t.id===tabId);if(!t)return;
-  const url=resolveUrl(raw);if(!url)return;
-  showLoad();
+function navigate(raw, tabId) {
+  if (!raw) return;
+  tabId = tabId || activeId;
+  const t = tabs.find(t => t.id === tabId);
+  if (!t) return;
+  const url = resolveUrl(raw);
+  if (!url) return;
 
-  const go=()=>{
-    let pu;
-    try{pu=__uv$config.prefix+__uv$config.encodeUrl(url);}
-    catch(e){hideLoad();return;}
+  showLoading(url);
 
-    if(!t.frame){
-      const f=document.createElement('iframe');
-      f.className='pf';f.id='f_'+tabId;
+  const go = () => {
+    let proxied;
+    try { proxied = __uv$config.prefix + __uv$config.encodeUrl(url); }
+    catch (e) { hideLoading(); return; }
+
+    if (!t.frame) {
+      const f = document.createElement('iframe');
+      f.className = 'frame';
       document.getElementById('content').appendChild(f);
-      t.frame=f;
-      f.addEventListener('load',()=>{hideLoad();updMeta(t);updateNav();});
+      t.frame = f;
+      f.addEventListener('load', () => {
+        hideLoading();
+        try {
+          const doc = f.contentDocument;
+          if (doc) {
+            t.title = doc.title || hostname(url) || 'Page';
+            const link = doc.querySelector('link[rel*="icon"]');
+            if (link) t.fav = link.href;
+          }
+        } catch (e) { t.title = hostname(url) || 'Page'; }
+        renderTabs();
+        updateNavBtns();
+      });
     }
-    document.getElementById('newtab').classList.add('gone');
-    document.querySelectorAll('.pf').forEach(f=>f.classList.remove('active'));
-    t.frame.src=pu;t.frame.classList.add('active');
-    t.url=url;setUrl(url);renderTabs();
+
+    document.getElementById('home').classList.add('hidden');
+    document.querySelectorAll('.frame').forEach(f => f.classList.remove('active'));
+    t.frame.src = proxied;
+    t.frame.classList.add('active');
+    t.url = url;
+    setUrlBar(url);
+    renderTabs();
   };
 
-  if(proxyReady)go();
-  else{const p=setInterval(()=>{if(proxyReady){clearInterval(p);go();}},100);}
+  if (proxyReady) go();
+  else { const p = setInterval(() => { if (proxyReady) { clearInterval(p); go(); } }, 100); }
 }
 
-function updMeta(t){
-  try{
-    const d=t.frame.contentDocument;
-    if(d){
-      t.title=d.title||domain(t.url)||'Page';
-      const fl=d.querySelector('link[rel*="icon"]');
-      if(fl)t.fav=fl.href;
-    }
-  }catch(e){t.title=domain(t.url)||'Page';}
-  renderTabs();
+function nav(dir) {
+  const t = tabs.find(t => t.id === activeId);
+  if (!t || !t.frame) return;
+  if (dir === 'reload') { showLoading(t.url); t.frame.src = t.frame.src; return; }
+  try {
+    if (dir === 'back') t.frame.contentWindow.history.back();
+    else t.frame.contentWindow.history.forward();
+  } catch (e) {}
+  setTimeout(updateNavBtns, 120);
 }
 
-function domain(u){try{return new URL(u).hostname.replace('www.','');}catch(e){return u||'';}}
-function setUrl(v){document.getElementById('url-input').value=v;}
-function showNT(){document.getElementById('newtab').classList.remove('gone');document.querySelectorAll('.pf').forEach(f=>f.classList.remove('active'));}
-function showLoad(){document.getElementById('load').classList.add('show');}
-function hideLoad(){document.getElementById('load').classList.remove('show');}
-function updateNav(){
-  const t=tabs.find(t=>t.id===active);
-  const b=document.getElementById('bb'),f=document.getElementById('fb');
-  if(!t||!t.frame){b.disabled=true;f.disabled=true;return;}
-  try{b.disabled=t.frame.contentWindow.history.length<=1;f.disabled=false;}
-  catch(e){b.disabled=false;f.disabled=false;}
+function updateNavBtns() {
+  const t = tabs.find(t => t.id === activeId);
+  const back = document.getElementById('btn-back');
+  const fwd = document.getElementById('btn-fwd');
+  if (!t || !t.frame) { back.disabled = fwd.disabled = true; return; }
+  try { back.disabled = t.frame.contentWindow.history.length <= 1; fwd.disabled = false; }
+  catch (e) { back.disabled = fwd.disabled = false; }
 }
 
-function nav(a){
-  const t=tabs.find(t=>t.id===active);if(!t||!t.frame)return;
-  if(a==='reload'){showLoad();t.frame.src=t.frame.src;return;}
-  try{a==='back'?t.frame.contentWindow.history.back():t.frame.contentWindow.history.forward();}catch(e){}
-  setTimeout(updateNav,100);
+function showHome() {
+  document.getElementById('home').classList.remove('hidden');
+  document.querySelectorAll('.frame').forEach(f => f.classList.remove('active'));
 }
+function showLoading(url) {
+  document.getElementById('loading').classList.add('show');
+  document.getElementById('load-url').textContent = url || '';
+}
+function hideLoading() { document.getElementById('loading').classList.remove('show'); }
+function setUrlBar(v) { document.getElementById('url-input').value = v; }
+function hostname(u) { try { return new URL(u).hostname.replace('www.', ''); } catch (e) { return u || ''; } }
 
-// url bar
-document.getElementById('url-input').addEventListener('keydown',e=>{
-  if(e.key==='Enter'){const v=e.target.value.trim();if(v)loadUrl(v);}
+document.getElementById('url-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { const v = e.target.value.trim(); if (v) navigate(v); }
 });
-document.getElementById('url-input').addEventListener('focus',function(){setTimeout(()=>this.select(),0);});
+document.getElementById('url-input').addEventListener('focus', function () {
+  setTimeout(() => this.select(), 0);
+});
+document.getElementById('home-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doSearch();
+});
 
-// new tab search
-document.getElementById('nt-si').addEventListener('keydown',e=>{if(e.key==='Enter')doSearch();});
-function doSearch(){const q=document.getElementById('nt-si').value.trim();if(q){loadUrl(q);document.getElementById('nt-si').value='';}}
-function go(u){loadUrl(u);}
+function doSearch() {
+  const q = document.getElementById('home-input').value.trim();
+  if (q) { navigate(q); document.getElementById('home-input').value = ''; }
+}
 
-// new tab btn
-document.getElementById('newtab-btn').addEventListener('click',()=>mkTab(null));
+document.getElementById('eng-btn').addEventListener('click', e => {
+  e.stopPropagation();
+  document.getElementById('eng-menu').classList.toggle('open');
+});
+document.addEventListener('click', () => document.getElementById('eng-menu').classList.remove('open'));
 
-// panic
-document.addEventListener('keydown',e=>{
-  if(e.key==='`'&&document.activeElement.tagName!=='INPUT'&&document.activeElement.tagName!=='TEXTAREA'){
-    window.location.href='https://classroom.google.com';
+function pickEngine(el) {
+  document.querySelectorAll('.eng-opt').forEach(o => o.classList.remove('active'));
+  el.classList.add('active');
+  engUrl = el.dataset.url;
+  document.getElementById('eng-icon').src = el.dataset.ico;
+  document.getElementById('eng-menu').classList.remove('open');
+}
+
+document.getElementById('new-tab').addEventListener('click', () => newTab(null));
+
+document.addEventListener('keydown', e => {
+  if (e.key === '`' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+    window.location.href = 'https://classroom.google.com';
   }
 });
 
-// init
-mkTab(null);
+newTab(null);
 </script>
 </body>
 </html>
